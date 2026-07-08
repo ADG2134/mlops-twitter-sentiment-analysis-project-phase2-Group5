@@ -1,0 +1,27 @@
+# Central configuration for the DVC pipeline.
+# Change values here, then run `dvc repro` — DVC re-runs only affected stages.
+
+prepare:
+  raw_path: data/raw/sentiment140.csv   # Kaggle Sentiment140 CSV (no header)
+  sample_size: 100000                   # subsample for fast iteration; set null for full 1.6M
+  test_size: 0.2
+  random_state: 42
+  lowercase: true
+  remove_urls: true
+  remove_mentions: true
+  remove_hashtag_symbol: true
+
+featurize:
+  vectorizer: tfidf        # tfidf | count
+  max_features: 50000
+  ngram_max: 1             # 1 = unigrams, 2 = uni+bigrams
+
+train:
+  model: logreg            # logreg | linearsvc | nb
+  C: 1.0                   # regularization strength (logreg / linearsvc)
+  max_iter: 1000
+  class_weight: balanced   # balanced | null
+
+mlflow:
+  experiment_name: twitter-sentiment-analysis
+  tracking_uri: sqlite:///mlflow.db  # local SQLite backend; swap for a server URI if you have one

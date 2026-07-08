@@ -1,0 +1,95 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: python src/prepare.py
+    deps:
+    - path: data/raw/sentiment140.csv
+      hash: md5
+      md5: df952449d6f9b5f9fdfe3fc53ddef7ca
+      size: 238803811
+    - path: src/prepare.py
+      hash: md5
+      md5: 69413b1996d97952af52b714380e9e1d
+      size: 2622
+    params:
+      params.yaml:
+        prepare:
+          raw_path: data/raw/sentiment140.csv
+          sample_size: 100000
+          test_size: 0.2
+          random_state: 42
+          lowercase: true
+          remove_urls: true
+          remove_mentions: true
+          remove_hashtag_symbol: true
+    outs:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: 840ebd7b32263c9861161a23ca765cec
+      size: 1389347
+    - path: data/processed/train.csv
+      hash: md5
+      md5: 0826b7f8eabbb7cf84bec1f8c7def504
+      size: 5543327
+  train:
+    cmd: python src/train.py
+    deps:
+    - path: data/processed/train.csv
+      hash: md5
+      md5: 0826b7f8eabbb7cf84bec1f8c7def504
+      size: 5543327
+    - path: src/train.py
+      hash: md5
+      md5: 6337cb98c3bbf3e48251553228366b80
+      size: 3046
+    params:
+      params.yaml:
+        featurize:
+          vectorizer: tfidf
+          max_features: 50000
+          ngram_max: 2
+        mlflow:
+          experiment_name: twitter-sentiment-analysis
+          tracking_uri: sqlite:///mlflow.db
+        train:
+          model: nb
+          C: 1.0
+          max_iter: 1000
+          class_weight: balanced
+    outs:
+    - path: models/model.pkl
+      hash: md5
+      md5: 488072fd61f97189e1c4460c3e1fa4bd
+      size: 3519293
+    - path: models/run_id.txt
+      hash: md5
+      md5: 3aa825c1cdf91e9e2c2b9f6b4f711444
+      size: 32
+  evaluate:
+    cmd: python src/evaluate.py
+    deps:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: 840ebd7b32263c9861161a23ca765cec
+      size: 1389347
+    - path: models/model.pkl
+      hash: md5
+      md5: 488072fd61f97189e1c4460c3e1fa4bd
+      size: 3519293
+    - path: models/run_id.txt
+      hash: md5
+      md5: 3aa825c1cdf91e9e2c2b9f6b4f711444
+      size: 32
+    - path: src/evaluate.py
+      hash: md5
+      md5: 66d1d442fb7372607d2badd623de6436
+      size: 2384
+    outs:
+    - path: metrics/confusion_matrix.json
+      hash: md5
+      md5: e6a24c02f5aac88c39c973fa084abb43
+      size: 142
+    - path: metrics/scores.json
+      hash: md5
+      md5: 03b0709ed99b8ac1b40158277dd7c893
+      size: 163

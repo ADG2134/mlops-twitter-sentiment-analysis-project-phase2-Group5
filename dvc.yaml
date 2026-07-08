@@ -1,0 +1,38 @@
+stages:
+  prepare:
+    cmd: python src/prepare.py
+    deps:
+      - src/prepare.py
+      - data/raw/sentiment140.csv
+    params:
+      - prepare
+    outs:
+      - data/processed/train.csv
+      - data/processed/test.csv
+
+  train:
+    cmd: python src/train.py
+    deps:
+      - src/train.py
+      - data/processed/train.csv
+    params:
+      - featurize
+      - train
+      - mlflow
+    outs:
+      - models/model.pkl
+      - models/run_id.txt
+
+  evaluate:
+    cmd: python src/evaluate.py
+    deps:
+      - src/evaluate.py
+      - models/model.pkl
+      - models/run_id.txt
+      - data/processed/test.csv
+    metrics:
+      - metrics/scores.json:
+          cache: false
+    outs:
+      - metrics/confusion_matrix.json:
+          cache: false

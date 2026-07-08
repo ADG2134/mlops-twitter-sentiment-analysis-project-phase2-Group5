@@ -1,0 +1,73 @@
+<svg viewBox="0 0 980 560" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="980" height="560" fill="#ffffff"/>
+  <text x="490" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">Twitter Sentiment Analysis — MLOps Architecture</text>
+
+  <!-- Data source -->
+  <rect x="30" y="80" width="180" height="90" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="120" y="112" text-anchor="middle" font-size="14" font-weight="600" fill="#1e40af">Data Source</text>
+  <text x="120" y="133" text-anchor="middle" font-size="12" fill="#334155">Sentiment140 (Kaggle)</text>
+  <text x="120" y="151" text-anchor="middle" font-size="12" fill="#334155">1.6M labeled tweets</text>
+
+  <!-- DVC pipeline container -->
+  <rect x="255" y="60" width="460" height="140" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-dasharray="6 4" stroke-width="1.5"/>
+  <text x="485" y="82" text-anchor="middle" font-size="13" font-weight="600" fill="#64748b">DVC Pipeline (dvc.yaml · dvc repro)</text>
+
+  <rect x="275" y="100" width="120" height="80" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+  <text x="335" y="130" text-anchor="middle" font-size="13" font-weight="600" fill="#065f46">prepare</text>
+  <text x="335" y="149" text-anchor="middle" font-size="11" fill="#334155">clean · split</text>
+  <text x="335" y="165" text-anchor="middle" font-size="11" fill="#334155">train/test CSVs</text>
+
+  <rect x="425" y="100" width="120" height="80" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+  <text x="485" y="130" text-anchor="middle" font-size="13" font-weight="600" fill="#065f46">train</text>
+  <text x="485" y="149" text-anchor="middle" font-size="11" fill="#334155">TF-IDF + model</text>
+  <text x="485" y="165" text-anchor="middle" font-size="11" fill="#334155">model.pkl</text>
+
+  <rect x="575" y="100" width="120" height="80" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+  <text x="635" y="130" text-anchor="middle" font-size="13" font-weight="600" fill="#065f46">evaluate</text>
+  <text x="635" y="149" text-anchor="middle" font-size="11" fill="#334155">test metrics</text>
+  <text x="635" y="165" text-anchor="middle" font-size="11" fill="#334155">scores.json</text>
+
+  <line x1="210" y1="140" x2="270" y2="140" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="395" y1="140" x2="420" y2="140" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="545" y1="140" x2="570" y2="140" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- params.yaml -->
+  <rect x="400" y="250" width="170" height="64" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+  <text x="485" y="277" text-anchor="middle" font-size="13" font-weight="600" fill="#92400e">params.yaml</text>
+  <text x="485" y="297" text-anchor="middle" font-size="11" fill="#334155">single config for all stages</text>
+  <line x1="485" y1="248" x2="485" y2="204" stroke="#d97706" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- MLflow -->
+  <rect x="760" y="80" width="190" height="120" rx="10" fill="#fdf4ff" stroke="#a21caf" stroke-width="1.5"/>
+  <text x="855" y="110" text-anchor="middle" font-size="14" font-weight="600" fill="#86198f">MLflow Tracking</text>
+  <text x="855" y="132" text-anchor="middle" font-size="11" fill="#334155">params · metrics · models</text>
+  <text x="855" y="150" text-anchor="middle" font-size="11" fill="#334155">SQLite backend (mlflow.db)</text>
+  <text x="855" y="168" text-anchor="middle" font-size="11" fill="#334155">baseline + experiments</text>
+  <line x1="700" y1="120" x2="755" y2="120" stroke="#a21caf" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Versioning row -->
+  <rect x="60" y="380" width="240" height="100" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="1.5"/>
+  <text x="180" y="410" text-anchor="middle" font-size="13" font-weight="600" fill="#0f172a">Git + GitHub</text>
+  <text x="180" y="432" text-anchor="middle" font-size="11" fill="#334155">code · dvc.yaml · params.yaml</text>
+  <text x="180" y="450" text-anchor="middle" font-size="11" fill="#334155">dvc.lock (pipeline state)</text>
+
+  <rect x="370" y="380" width="240" height="100" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="1.5"/>
+  <text x="490" y="410" text-anchor="middle" font-size="13" font-weight="600" fill="#0f172a">DVC Cache / Remote</text>
+  <text x="490" y="432" text-anchor="middle" font-size="11" fill="#334155">versioned data &amp; model artifacts</text>
+  <text x="490" y="450" text-anchor="middle" font-size="11" fill="#334155">dvc push / dvc pull</text>
+
+  <rect x="680" y="380" width="240" height="100" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="1.5"/>
+  <text x="800" y="410" text-anchor="middle" font-size="13" font-weight="600" fill="#0f172a">MLflow UI</text>
+  <text x="800" y="432" text-anchor="middle" font-size="11" fill="#334155">compare runs · screenshots</text>
+  <text x="800" y="450" text-anchor="middle" font-size="11" fill="#334155">mlflow ui --backend-store-uri</text>
+
+  <line x1="335" y1="184" x2="180" y2="376" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="485" y1="204" x2="490" y2="376" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="855" y1="204" x2="800" y2="376" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <text x="490" y="530" text-anchor="middle" font-size="11" fill="#64748b">Reproduce anytime: git clone → dvc pull → dvc repro → mlflow ui</text>
+</svg>
