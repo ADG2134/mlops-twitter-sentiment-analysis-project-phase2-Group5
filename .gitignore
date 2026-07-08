@@ -8,3 +8,4 @@ models/
 mlflow.db
 mlartifacts/
 metrics/
+.DS_Store
