@@ -9,3 +9,5 @@ mlflow.db
 mlartifacts/
 metrics/
 .DS_Store
+src/stream_predict.py
+src/monitor_stream.py
