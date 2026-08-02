@@ -1,0 +1,55 @@
+name: Drift Monitor
+
+on:
+  schedule:
+    # Every day at 13:00 UTC. Adjust to taste — for a class demo you may
+    # want to run this via "workflow_dispatch" manually instead of waiting
+    # for the schedule.
+    - cron: "0 13 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  check-drift:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write   # needed to dispatch retrain.yml when drift is found
+    outputs:
+      drift_detected: ${{ steps.drift.outputs.drift_detected }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-api.txt -r requirements-dev.txt
+
+      - name: Run drift check against the deployed API
+        id: drift
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: |
+          if [ -z "$API_URL" ]; then
+            echo "::warning::vars.API_URL is not set (Settings > Secrets and variables > Actions > Variables). Skipping."
+            echo "drift_detected=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          python -m scripts.monitor_drift --source api --api-url "$API_URL"
+
+      - name: Upload drift report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-report-${{ github.run_id }}
+          path: metrics/drift/
+          if-no-files-found: ignore
+
+      - name: Trigger retraining workflow
+        if: steps.drift.outputs.drift_detected == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run retrain.yml --ref ${{ github.ref_name }}

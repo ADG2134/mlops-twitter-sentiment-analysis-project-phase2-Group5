@@ -1,0 +1,17 @@
+.git
+.github
+.venv
+__pycache__
+*.pyc
+data/raw
+data/processed
+mlflow.db
+mlruns
+notebooks
+*.ipynb
+tests
+docs
+presentation
+logs
+.dvc/cache
+metrics/drift

@@ -1,0 +1,90 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main, phase2]
+  pull_request:
+    branches: [main, phase2]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt -r requirements-api.txt -r requirements-dev.txt
+
+      - name: Lint (ruff)
+        # Scoped to Phase 2 code (app/, scripts/, tests/) so this doesn't
+        # start failing on pre-existing Phase 1 files in src/ that weren't
+        # written against these lint rules. Feel free to widen this to
+        # `ruff check .` once src/ is cleaned up too.
+        run: ruff check app scripts tests
+
+      - name: Train a throwaway model on the CI fixture
+        # The real 238MB Sentiment140 CSV is git-ignored (see README), so CI
+        # can't reproduce the full pipeline. Instead we train a tiny model on
+        # a 400-row fixture (data/fixtures/) purely so the API test suite has
+        # a real models/model.pkl to load. This is NOT the deployed model.
+        run: |
+          cp data/fixtures/ci_params.yaml params.yaml.ci
+          cp params.yaml params.yaml.bak
+          cp params.yaml.ci params.yaml
+          python src/prepare.py
+          python src/train.py
+          cp params.yaml.bak params.yaml
+
+      - name: Run tests
+        run: pytest -q
+
+      - name: Upload coverage/test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-model-and-metrics
+          path: |
+            models/model.pkl
+            metrics/
+          if-no-files-found: ignore
+
+  deploy:
+    name: Deploy to Render
+    needs: lint-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy hook
+        # Render watches the repo/branch you connect in its dashboard and can
+        # auto-deploy on push by itself, but the assignment asks for
+        # GitHub Actions to own the deploy step, so we gate it behind the
+        # lint-and-test job and trigger Render's Deploy Hook explicitly.
+        # Create the hook in Render: Service -> Settings -> Deploy Hook,
+        # then add it as the RENDER_DEPLOY_HOOK_URL repo secret.
+        run: |
+          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            echo "RENDER_DEPLOY_HOOK_URL secret not set — skipping deploy trigger."
+            echo "Add it under Settings > Secrets and variables > Actions."
+            exit 0
+          fi
+          curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+
+      - name: Wait for service to come up and smoke-test /health
+        if: ${{ vars.API_URL != '' }}
+        run: |
+          echo "Waiting for Render deploy to roll out..."
+          for i in $(seq 1 20); do
+            if curl -fsS "${{ vars.API_URL }}/health"; then
+              echo "Service healthy."
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "Service did not become healthy in time."
+          exit 1

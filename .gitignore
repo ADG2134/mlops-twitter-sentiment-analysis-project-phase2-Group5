@@ -4,10 +4,15 @@ __pycache__/
 mlruns/
 data/raw/*.csv
 data/processed/
-models/
+models/*
+!models/production/
+!models/production/**
 mlflow.db
 mlartifacts/
-metrics/
+metrics/*
+!metrics/scores.json
+!metrics/confusion_matrix.json
 .DS_Store
 src/stream_predict.py
 src/monitor_stream.py
+logs/

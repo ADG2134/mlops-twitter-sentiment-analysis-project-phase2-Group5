@@ -1,0 +1,18 @@
+# Render "Blueprint" — lets you spin the service up with one click via
+# https://dashboard.render.com/blueprints instead of clicking through the
+# New Web Service wizard. Optional: you can also just create the service
+# manually in the dashboard and point it at this repo/Dockerfile.
+services:
+  - type: web
+    name: twitter-sentiment-api
+    plan: free
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: MODEL_PATH
+        value: models/model.pkl
+      - key: PARAMS_PATH
+        value: params.yaml
+      - key: PREDICTION_LOG_PATH
+        value: logs/predictions.jsonl
