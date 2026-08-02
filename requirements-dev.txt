@@ -1,0 +1,7 @@
+# Extra dependencies for CI, testing, linting, and drift monitoring.
+# Install alongside requirements.txt (training) and requirements-api.txt (serving).
+pytest>=8.0
+httpx>=0.27
+ruff>=0.5
+evidently==0.4.33
+requests>=2.31

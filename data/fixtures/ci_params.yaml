@@ -1,0 +1,24 @@
+# Used ONLY by CI (.github/workflows/ci.yml) to train a tiny throwaway
+# model so the API test suite has something real to load. Not used for
+# the actual deployed model — that comes from `dvc repro` on the full
+# params.yaml at the repo root, or scripts/retrain.py.
+prepare:
+  raw_path: data/fixtures/ci_sample_sentiment140.csv
+  sample_size: null
+  test_size: 0.25
+  random_state: 42
+  lowercase: true
+  remove_urls: true
+  remove_mentions: true
+  remove_hashtag_symbol: true
+
+featurize:
+  vectorizer: tfidf
+  max_features: 2000
+  ngram_max: 1
+
+train:
+  model: logreg
+  C: 1.0
+  max_iter: 200
+  class_weight: balanced

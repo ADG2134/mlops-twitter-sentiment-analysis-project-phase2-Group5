@@ -1,0 +1,19 @@
+services:
+  api:
+    build: .
+    image: twitter-sentiment-api:local
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_PATH=models/model.pkl
+      - PARAMS_PATH=params.yaml
+      - PREDICTION_LOG_PATH=logs/predictions.jsonl
+    volumes:
+      # Persist the prediction log across container restarts so
+      # scripts/monitor_drift.py has something to read locally.
+      - ./logs:/srv/logs
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

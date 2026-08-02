@@ -1,0 +1,91 @@
+name: Retrain
+
+# Triggered automatically by drift-monitor.yml when drift is detected, or
+# manually via workflow_dispatch. Trains on the FULL raw dataset (not the
+# tiny CI fixture), then opens a PR with the new model instead of pushing
+# straight to main — a human should eyeball metrics before a retrained
+# model goes live.
+on:
+  workflow_dispatch:
+    inputs:
+      force_promote:
+        description: "Promote even if metrics regress vs current production model"
+        type: boolean
+        default: false
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r requirements-api.txt -r requirements-dev.txt
+
+      - name: Fetch raw dataset
+        run: |
+          mkdir -p data/raw
+          if [ -n "${{ secrets.AWS_ACCESS_KEY_ID }}" ] && [ -f .dvc/config ]; then
+            echo "Attempting dvc pull from configured remote..."
+            pip install "dvc[s3]"
+            dvc pull data/raw/sentiment140.csv.dvc || echo "dvc pull failed, will try Kaggle"
+          fi
+          if [ ! -f data/raw/sentiment140.csv ]; then
+            if [ -n "${{ secrets.KAGGLE_USERNAME }}" ] && [ -n "${{ secrets.KAGGLE_KEY }}" ]; then
+              echo "Downloading Sentiment140 from Kaggle..."
+              pip install kaggle
+              export KAGGLE_USERNAME=${{ secrets.KAGGLE_USERNAME }}
+              export KAGGLE_KEY=${{ secrets.KAGGLE_KEY }}
+              kaggle datasets download -d kazanova/sentiment140 -p data/raw --unzip
+              mv data/raw/training.1600000.processed.noemoticon.csv data/raw/sentiment140.csv
+            fi
+          fi
+          if [ ! -f data/raw/sentiment140.csv ]; then
+            echo "::error::No raw dataset available. Configure either a DVC remote (AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY secrets) or Kaggle API access (KAGGLE_USERNAME/KAGGLE_KEY secrets). See DEPLOY_GUIDE.md."
+            exit 1
+          fi
+
+      - name: Retrain
+        run: |
+          FORCE_FLAG=""
+          if [ "${{ inputs.force_promote }}" = "true" ]; then FORCE_FLAG="--force-promote"; fi
+          python -m scripts.retrain $FORCE_FLAG
+
+      - name: Upload run artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: retrain-artifacts-${{ github.run_id }}
+          path: |
+            metrics/scores.json
+            metrics/confusion_matrix.json
+            models/production/metrics.json
+          if-no-files-found: ignore
+
+      - name: Open PR with the retrained model
+        if: success()
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: auto-retrain model (run ${{ github.run_id }})"
+          title: "Auto-retrain: refresh production model"
+          body: |
+            Triggered by ${{ github.event_name }}.
+
+            See attached workflow artifacts for full metrics
+            (`metrics/scores.json`) and the drift report that triggered this
+            run, if applicable.
+
+            **Review before merging** — merging to `main` will redeploy the
+            API with this model via the CI/CD workflow.
+          branch: auto-retrain/${{ github.run_id }}
+          add-paths: |
+            models/production/model.pkl
+            models/production/metrics.json
+            data/reference/reference_sample.csv
+            metrics/scores.json
+            metrics/confusion_matrix.json
