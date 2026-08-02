@@ -22,3 +22,7 @@ train:
   C: 1.0
   max_iter: 200
   class_weight: balanced
+
+mlflow:
+  experiment_name: ci-fixture
+  tracking_uri: sqlite:///mlflow.db
